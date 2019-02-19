@@ -73,7 +73,7 @@ section = settings['training']
 seed = section.getint('seed')
 
 # model
-feature_extractor = models.resnet34(pretrained=True)
+feature_extractor = models.resnet18(pretrained=True)
 posenet = PoseNet(feature_extractor, droprate=dropout, pretrained=True,
                   filter_nans=(args.model=='mapnet++'))
 if args.model == 'posenet':
