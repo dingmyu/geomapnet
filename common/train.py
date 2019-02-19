@@ -26,12 +26,14 @@ def load_state_dict(model, state_dict):
   :param state_dict: 
   :return: loaded model
   """
+  #if list(state_dict.keys())[0].startswith('module.'):
+  #  state_dict = {k[7:]: v for k, v in state_dict.items()}
   model_names = [n for n,_ in model.named_parameters()]
   state_names = [n for n in state_dict.keys()]
-
+  #print(model_names,state_names)
   # find prefix for the model and state dicts from the first param name
-  if model_names[0].find(state_names[0]) >= 0:
-    model_prefix = model_names[0].replace(state_names[0], '')
+  if model_names[0].find(state_names[0][7:]) >= 0:
+    model_prefix = model_names[0].replace(state_names[0][7:], '')
     state_prefix = None
   elif state_names[0].find(model_names[0]) >= 0:
     state_prefix = state_names[0].replace(model_names[0], '')
@@ -45,7 +47,7 @@ def load_state_dict(model, state_dict):
   new_state_dict = OrderedDict()
   for k,v in state_dict.items():
     if state_prefix is None:
-      k = model_prefix + k
+      k = k.replace('module.', model_prefix)#model_prefix + k
     else:
       k = k.replace(state_prefix, '')
     new_state_dict[k] = v

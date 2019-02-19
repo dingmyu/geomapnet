@@ -74,6 +74,7 @@ if (args.model.find('mapnet') >= 0) or args.pose_graph:
   model = MapNet(mapnet=posenet)
 else:
   model = posenet
+#model = torch.nn.DataParallel(model).cuda()
 model.eval()
 
 # loss functions
@@ -83,7 +84,7 @@ q_criterion = quaternion_angular_error
 # load weights
 weights_filename = osp.expanduser(args.weights)
 if osp.isfile(weights_filename):
-  loc_func = lambda storage, loc: storage
+  loc_func = lambda storage, loc: storage#.cuda(0)
   checkpoint = torch.load(weights_filename, map_location=loc_func)
   load_state_dict(model, checkpoint['model_state_dict'])
   print 'Loaded weights from {:s}'.format(weights_filename)
