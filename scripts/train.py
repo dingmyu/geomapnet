@@ -82,7 +82,7 @@ elif args.model.find('mapnet') >= 0:
   model = MapNet(mapnet=posenet)
 else:
   raise NotImplementedError
-
+model = torch.nn.DataParallel(model).cuda()
 # loss function
 if args.model == 'posenet':
   train_criterion = PoseNetCriterion(sax=sax, saq=saq, learn_beta=args.learn_beta)
