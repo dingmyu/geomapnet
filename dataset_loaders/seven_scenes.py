@@ -80,7 +80,7 @@ class SevenScenes(data.Dataset):
           # vo_stats[seq]['R'] = np.eye(3)
           # vo_stats[seq]['t'] = np.zeros(3)
         else:
-          frame_idx = np.array(xrange(0, len(p_filenames), 3), dtype=np.int)
+          frame_idx = np.array(xrange(0, len(p_filenames), 5), dtype=np.int)
           pss = [np.loadtxt(osp.join(seq_dir, 'frame-{:06d}.pose.txt'.
             format(i))).flatten()[:12] for i in frame_idx]
           ps[seq] = np.asarray(pss)
