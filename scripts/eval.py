@@ -68,7 +68,7 @@ if (args.model.find('mapnet') >= 0) or args.pose_graph:
     srq = section.getfloat('s_rel_rot', 20)
 
 # model
-feature_extractor = models.resnet34(pretrained=False)
+feature_extractor = models.resnet18(pretrained=False)
 posenet = PoseNet(feature_extractor, droprate=dropout, pretrained=False)
 if (args.model.find('mapnet') >= 0) or args.pose_graph:
   model = MapNet(mapnet=posenet)
