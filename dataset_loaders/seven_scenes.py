@@ -17,6 +17,8 @@ import pickle
 sys.path.insert(0, '../')
 from common.pose_utils import process_poses
 
+scenes_name = ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
+
 class SevenScenes(data.Dataset):
     def __init__(self, scene, data_path, train, transform=None,
                  target_transform=None, mode=0, seed=7, real=False,
@@ -40,76 +42,82 @@ class SevenScenes(data.Dataset):
       self.skip_images = skip_images
       np.random.seed(seed)
 
-      # directories
-      base_dir = osp.join(osp.expanduser(data_path), scene)
-      data_dir = osp.join('..', 'data', '7Scenes', scene)
-
-      # decide which sequences to use
-      if train:
-        split_file = osp.join(base_dir, 'TrainSplit.txt')
-      else:
-        split_file = osp.join(base_dir, 'TestSplit.txt')
-      with open(split_file, 'r') as f:
-        seqs = [int(l.split('sequence')[-1]) for l in f if not l.startswith('#')]
-
-      # read poses and collect image names
       self.c_imgs = []
       self.d_imgs = []
-      self.gt_idx = np.empty((0,), dtype=np.int)
-      ps = {}
-      vo_stats = {}
-      gt_offset = int(0)
-      for seq in seqs:
-        seq_dir = osp.join(base_dir, 'seq-{:02d}'.format(seq))
-        seq_data_dir = osp.join(data_dir, 'seq-{:02d}'.format(seq))
-        p_filenames = [n for n in os.listdir(osp.join(seq_dir, '.')) if
-                       n.find('pose') >= 0]
-        if real:
-          pose_file = osp.join(data_dir, '{:s}_poses'.format(vo_lib),
-                               'seq-{:02d}.txt'.format(seq))
-          pss = np.loadtxt(pose_file)
-          frame_idx = pss[:, 0].astype(np.int)
-          if vo_lib == 'libviso2':
-            frame_idx -= 1
-          ps[seq] = pss[:, 1:13]
-          vo_stats_filename = osp.join(seq_data_dir,
-                                       '{:s}_vo_stats.pkl'.format(vo_lib))
-          with open(vo_stats_filename, 'rb') as f:
-            vo_stats[seq] = pickle.load(f)
-          # # uncomment to check that PGO does not need aligned VO!
-          # vo_stats[seq]['R'] = np.eye(3)
-          # vo_stats[seq]['t'] = np.zeros(3)
-        else:
-          frame_idx = np.array(xrange(len(p_filenames)), dtype=np.int)
-          pss = [np.loadtxt(osp.join(seq_dir, 'frame-{:06d}.pose.txt'.
-            format(i))).flatten()[:12] for i in frame_idx]
-          ps[seq] = np.asarray(pss)
-          vo_stats[seq] = {'R': np.eye(3), 't': np.zeros(3), 's': 1}
-
-        self.gt_idx = np.hstack((self.gt_idx, gt_offset+frame_idx))
-        gt_offset += len(p_filenames)
-        c_imgs = [osp.join(seq_dir, 'frame-{:06d}.color.png'.format(i))
-                  for i in frame_idx]
-        d_imgs = [osp.join(seq_dir, 'frame-{:06d}.depth.png'.format(i))
-                  for i in frame_idx]
-        self.c_imgs.extend(c_imgs)
-        self.d_imgs.extend(d_imgs)
-
-      pose_stats_filename = osp.join(data_dir, 'pose_stats.txt')
-      if train and not real:
-        mean_t = np.zeros(3)  # optionally, use the ps dictionary to calc stats
-        std_t = np.ones(3)
-        np.savetxt(pose_stats_filename, np.vstack((mean_t, std_t)), fmt='%8.7f')
-      else:
-        mean_t, std_t = np.loadtxt(pose_stats_filename)
-
-      # convert pose to translation + log quaternion
+      self.index = []
       self.poses = np.empty((0, 6))
-      for seq in seqs:
-        pss = process_poses(poses_in=ps[seq], mean_t=mean_t, std_t=std_t,
-          align_R=vo_stats[seq]['R'], align_t=vo_stats[seq]['t'],
-          align_s=vo_stats[seq]['s'])
-        self.poses = np.vstack((self.poses, pss))
+      for index, scene in enumerate(scenes_name):
+      # directories
+          base_dir = osp.join(osp.expanduser(data_path), scene)
+          data_dir = osp.join('..', 'data', '7Scenes', scene)
+
+          # decide which sequences to use
+          if train:
+            split_file = osp.join(base_dir, 'TrainSplit.txt')
+          else:
+            split_file = osp.join(base_dir, 'TestSplit.txt')
+          with open(split_file, 'r') as f:
+            seqs = [int(l.split('sequence')[-1]) for l in f if not l.startswith('#')]
+
+          # read poses and collect image names
+          ps = {}
+          vo_stats = {}
+          self.gt_idx = np.empty((0,), dtype=np.int)
+
+          gt_offset = int(0)
+          for seq in seqs:
+            seq_dir = osp.join(base_dir, 'seq-{:02d}'.format(seq))
+            seq_data_dir = osp.join(data_dir, 'seq-{:02d}'.format(seq))
+            p_filenames = [n for n in os.listdir(osp.join(seq_dir, '.')) if
+                           n.find('pose') >= 0]
+
+            if real:
+              pose_file = osp.join(data_dir, '{:s}_poses'.format(vo_lib),
+                                   'seq-{:02d}.txt'.format(seq))
+              pss = np.loadtxt(pose_file)
+              frame_idx = pss[:, 0].astype(np.int)
+              if vo_lib == 'libviso2':
+                frame_idx -= 1
+              ps[seq] = pss[:, 1:13]
+              vo_stats_filename = osp.join(seq_data_dir,
+                                           '{:s}_vo_stats.pkl'.format(vo_lib))
+              with open(vo_stats_filename, 'rb') as f:
+                vo_stats[seq] = pickle.load(f)
+              # # uncomment to check that PGO does not need aligned VO!
+              # vo_stats[seq]['R'] = np.eye(3)
+              # vo_stats[seq]['t'] = np.zeros(3)
+            else:
+              frame_idx = np.array(xrange(len(p_filenames)), dtype=np.int)
+              pss = [np.loadtxt(osp.join(seq_dir, 'frame-{:06d}.pose.txt'.
+                format(i))).flatten()[:12] for i in frame_idx]
+              ps[seq] = np.asarray(pss)
+              vo_stats[seq] = {'R': np.eye(3), 't': np.zeros(3), 's': 1}
+
+            self.gt_idx = np.hstack((self.gt_idx, gt_offset+frame_idx))
+            gt_offset += len(p_filenames)
+            c_imgs = [osp.join(seq_dir, 'frame-{:06d}.color.png'.format(i))
+                      for i in frame_idx]
+            d_imgs = [osp.join(seq_dir, 'frame-{:06d}.depth.png'.format(i))
+                      for i in frame_idx]
+            scene_index = [index for i in frame_idx]
+            self.index.extend(scene_index)
+            self.c_imgs.extend(c_imgs)
+            self.d_imgs.extend(d_imgs)
+
+          pose_stats_filename = osp.join(data_dir, 'pose_stats.txt')
+          if train and not real:
+            mean_t = np.zeros(3)  # optionally, use the ps dictionary to calc stats
+            std_t = np.ones(3)
+            np.savetxt(pose_stats_filename, np.vstack((mean_t, std_t)), fmt='%8.7f')
+          else:
+            mean_t, std_t = np.loadtxt(pose_stats_filename)
+
+          # convert pose to translation + log quaternion
+          for seq in seqs:
+            pss = process_poses(poses_in=ps[seq], mean_t=mean_t, std_t=std_t,
+              align_R=vo_stats[seq]['R'], align_t=vo_stats[seq]['t'],
+              align_s=vo_stats[seq]['s'])
+            self.poses = np.vstack((self.poses, pss))
 
     def __getitem__(self, index):
       if self.skip_images:
@@ -151,9 +159,9 @@ class SevenScenes(data.Dataset):
 
       if self.transform is not None:
         if self.mode == 2:
-          img = [self.transform(i) for i in img]
+          img = [self.transform[self.index[index]](i) for i in img]
         else:
-          img = self.transform(img)
+          img = self.transform[self.index[index]](img)
 
       return img, pose
 

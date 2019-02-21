@@ -111,21 +111,28 @@ if args.learn_gamma and hasattr(train_criterion, 'srx') and \
 optimizer = Optimizer(params=param_list, method=opt_method, base_lr=lr,
   weight_decay=weight_decay, **optim_config)
 
+scenes_name = ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
+
+stats = []
+data_transform = []
 data_dir = osp.join('..', 'data', args.dataset)
-stats_file = osp.join(data_dir, args.scene, 'stats.txt')
-stats = np.loadtxt(stats_file)
+for scene in scenes_name:
+    stats_file = osp.join(data_dir, scene, 'stats.txt')
+    stats.append(np.loadtxt(stats_file))
+
 crop_size_file = osp.join(data_dir, 'crop_size.txt')
 crop_size = tuple(np.loadtxt(crop_size_file).astype(np.int))
 # transformers
-tforms = [transforms.Resize(256)]
-if color_jitter > 0:
-  assert color_jitter <= 1.0
-  print 'Using ColorJitter data augmentation'
-  tforms.append(transforms.ColorJitter(brightness=color_jitter,
-    contrast=color_jitter, saturation=color_jitter, hue=0.5))
-tforms.append(transforms.ToTensor())
-tforms.append(transforms.Normalize(mean=stats[0], std=np.sqrt(stats[1])))
-data_transform = transforms.Compose(tforms)
+for i in range(7):
+    tforms = [transforms.Resize(256)]
+    if color_jitter > 0:
+      assert color_jitter <= 1.0
+      print 'Using ColorJitter data augmentation'
+      tforms.append(transforms.ColorJitter(brightness=color_jitter,
+        contrast=color_jitter, saturation=color_jitter, hue=0.5))
+    tforms.append(transforms.ToTensor())
+    tforms.append(transforms.Normalize(mean=stats[i][0], std=np.sqrt(stats[i][1])))
+    data_transform.append(transforms.Compose(tforms))
 target_transform = transforms.Lambda(lambda x: torch.from_numpy(x).float())
 
 # datasets
