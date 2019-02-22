@@ -153,9 +153,10 @@ class SevenScenes(data.Dataset):
         if self.mode == 2:
           img = [self.transform(i) for i in img]
         else:
-          img = self.transform(img)
-
-      return img, pose
+          img_trans = self.transform(img)
+      import torchvision.transforms as transforms
+      return img_trans, pose, transforms.ToTensor()(img)
+    ####  directly use img_trans can also see something
 
     def __len__(self):
       return self.poses.shape[0]
