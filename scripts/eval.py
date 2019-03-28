@@ -219,17 +219,20 @@ ss = max(1, int(len(data_set) / 1000))  # 100 for stairs
 # scatter the points and draw connecting line
 x = np.vstack((pred_poses[::ss, 0].T, targ_poses[::ss, 0].T))
 y = np.vstack((pred_poses[::ss, 1].T, targ_poses[::ss, 1].T))
+print(y)
+print(y[0, :].shape)
 if args.dataset != '7Scenes':  # 2D drawing
-  ax.plot(x, y, c='b')
-  ax.scatter(x[0, :], y[0, :], c='r')
-  ax.scatter(x[1, :], y[1, :], c='g')
+#  ax.plot(x, y, c='b')
+  ax.plot(x[0, :], y[0, :], c='r', linestyle='-', marker='.', linewidth = '1')
+  ax.plot(x[1, :], y[1, :], c='g', linestyle='-', marker='None', linewidth = '1')
 else:
   z = np.vstack((pred_poses[::ss, 2].T, targ_poses[::ss, 2].T))
   for xx, yy, zz in zip(x.T, y.T, z.T):
     ax.plot(xx, yy, zs=zz, c='b')
   ax.scatter(x[0, :], y[0, :], zs=z[0, :], c='r', depthshade=0)
   ax.scatter(x[1, :], y[1, :], zs=z[1, :], c='g', depthshade=0)
-  ax.view_init(azim=119, elev=13)
+  ax.view_init(azim=0, elev=0)
+#  ax.view_init(azim=119, elev=13)
 
 if DISPLAY:
   plt.show(block=True)

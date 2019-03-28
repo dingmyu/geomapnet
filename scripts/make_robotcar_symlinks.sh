@@ -6,7 +6,7 @@
  
 set -x
 # change the following line
-ROBOTCAR_SDK_ROOT=/data/robotcar-dataset-sdk
+ROBOTCAR_SDK_ROOT=/mnt/lustre/dingmingyu/iccv19/geomapnet/data/deepslam_data/robotcar-dataset-sdk
 
 ln -s ${ROBOTCAR_SDK_ROOT}/models/ ../data/robotcar_camera_models
 ln -s ${ROBOTCAR_SDK_ROOT}/python/ ../dataset_loaders/robotcar_sdk
