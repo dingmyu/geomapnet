@@ -25,6 +25,9 @@ import torch.cuda
 from torch.utils.data import DataLoader
 from torchvision import transforms, models
 import cPickle
+import cv2
+import matplotlib.pyplot as plt
+
 
 # config
 parser = argparse.ArgumentParser(description='Evaluation script for PoseNet and'
@@ -171,7 +174,11 @@ for batch_idx, (data, target, pic) in enumerate(loader):
   # output : 1 x 6 or 1 x STEPS x 6
   _, output = step_feedfwd(data, model, CUDA, train=False)
   s = output.size()
-  output = output.cpu().data.numpy()
-  np.save('featuremap', output)
-  np.save('pic', pic.cpu().numpy())
-  break
+  output = output.cpu().data.numpy()[0]
+  output = cv2.resize(output.sum(0),(224,224))
+  plt.imsave('output/featuremap%d.png' % batch_idx, output)
+  #np.save('featuremap%d' % batch_idx, output)
+  pic = cv2.resize(pic.cpu().numpy()[0].transpose((1,2,0)),(224,224))
+  plt.imsave('output/pic%d.png' % batch_idx, pic)
+  #np.save('pic%d' batch_idx, pic)
+ # break
